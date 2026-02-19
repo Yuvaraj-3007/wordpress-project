@@ -8,8 +8,14 @@
  * can use WordPress functions like get_option(), wp_insert_post() etc.
  */
 
-// Load WordPress test library
-$wp_tests_dir = getenv('WP_TESTS_DIR') ?: '/tmp/wordpress-tests-lib';
+// Path to WordPress test library
+$wp_tests_dir = getenv('WP_TESTS_DIR') ?: '/tmp/wordpress-tests-lib/tests/phpunit';
+
+// Point to PHPUnit Polyfills — required by WP test suite
+define(
+    'WP_TESTS_PHPUNIT_POLYFILLS_PATH',
+    dirname( __DIR__ ) . '/vendor/yoast/phpunit-polyfills'
+);
 
 // Load WordPress test functions
 require_once $wp_tests_dir . '/includes/functions.php';
