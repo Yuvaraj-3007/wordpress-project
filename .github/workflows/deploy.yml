@@ -30,8 +30,11 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-progress
 
+      - name: Register WordPress Coding Standards
+        run: vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs
+
       - name: Run PHP CodeSniffer
-        run: composer lint
+        run: vendor/bin/phpcs --standard=WordPress --extensions=php wp-content/themes/yuvaraj-theme/
 
   # ─────────────────────────────────────
   # STAGE 2: PHPUnit Automated Tests
