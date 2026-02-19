@@ -108,10 +108,10 @@ jobs:
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build Docker image
-        run: docker build -t yuvarajpandian/wordpress-app:latest .
+        run: docker build -t YUVARAJ3007/wordpress-app:latest .
 
       - name: Push to Docker Hub
-        run: docker push yuvarajpandian/wordpress-app:latest
+        run: docker push YUVARAJ3007/wordpress-app:latest
 
   # ─────────────────────────────────────
   # STAGE 4: Deploy to Contabo VPS
