@@ -34,7 +34,7 @@ jobs:
         run: vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs
 
       - name: Run PHP CodeSniffer
-        run: vendor/bin/phpcs --standard=WordPress --extensions=php --warning-severity=0 wp-content/themes/yuvaraj-theme/
+        run: vendor/bin/phpcs -n --standard=WordPress --extensions=php wp-content/themes/yuvaraj-theme/
 
   # ─────────────────────────────────────
   # STAGE 2: PHPUnit Automated Tests
