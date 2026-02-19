@@ -3,7 +3,7 @@ services:
   # WordPress Application
   wordpress:
     build: .
-    image: YUVARAJ3007/wordpress-app:latest
+    image: yuvarajpandian/wordpress-app:latest
     ports:
       - 8080:80
     environment:
