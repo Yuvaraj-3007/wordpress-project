@@ -1,0 +1,34 @@
+# Environment file — never commit this
+.env
+
+# WordPress core files — not needed in repo
+wp-admin/
+wp-includes/
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/index.php
+wp-content/themes/index.php
+
+# Default WordPress plugins — not our code
+wp-content/plugins/akismet/
+wp-content/plugins/hello.php
+wp-content/plugins/index.php
+
+# Default WordPress themes — only keep our custom theme
+wp-content/themes/twentytwentytwo/
+wp-content/themes/twentytwentythree/
+wp-content/themes/twentytwentyfour/
+
+# WordPress config — use environment variables instead
+wp-config.php
+wp-config-sample.php
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Logs
+*.log

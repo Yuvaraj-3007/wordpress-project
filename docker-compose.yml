@@ -1,0 +1,36 @@
+services:
+
+  # WordPress Application
+  wordpress:
+    build: .
+    image: yuvaraj3007/wordpress-app:latest
+    ports:
+      - 8080:80
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DEBUG: ${WP_DEBUG}
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+      - wp-data:/var/www/html
+    depends_on:
+      - db
+    restart: always
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+    restart: always
+
+volumes:
+  wp-data:
+  db-data:

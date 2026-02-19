@@ -1,0 +1,139 @@
+name: WordPress CI/CD Pipeline
+# Author: Yuvaraj Pandian
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  # ─────────────────────────────────────
+  # STAGE 1: PHP Code Quality Check
+  # Tool: PHP CodeSniffer
+  # ─────────────────────────────────────
+  lint:
+    name: PHP CodeSniffer
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer, phpcs
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress
+
+      - name: Run PHP CodeSniffer
+        run: composer lint
+
+  # ─────────────────────────────────────
+  # STAGE 2: PHPUnit Automated Tests
+  # Tool: PHPUnit + WP_UnitTestCase
+  # ─────────────────────────────────────
+  test:
+    name: PHPUnit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      # MySQL database for WordPress tests
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass123
+          MYSQL_DATABASE: wp_test_db
+          MYSQL_USER: wpuser
+          MYSQL_PASSWORD: wppass123
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+          coverage: xdebug
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress
+
+      - name: Download WordPress test library
+        run: |
+          git clone --depth=1 https://github.com/WordPress/wordpress-develop.git /tmp/wordpress-tests-lib
+
+      - name: Setup WordPress test config
+        env:
+          WP_TESTS_DB_NAME: wp_test_db
+          WP_TESTS_DB_USER: wpuser
+          WP_TESTS_DB_PASSWORD: wppass123
+          WP_TESTS_DB_HOST: 127.0.0.1
+        run: |
+          cp /tmp/wordpress-tests-lib/wp-tests-config-sample.php /tmp/wordpress-tests-lib/wp-tests-config.php
+          sed -i "s/youremptytestdbnamehere/$WP_TESTS_DB_NAME/" /tmp/wordpress-tests-lib/wp-tests-config.php
+          sed -i "s/yourusernamehere/$WP_TESTS_DB_USER/" /tmp/wordpress-tests-lib/wp-tests-config.php
+          sed -i "s/yourpasswordhere/$WP_TESTS_DB_PASSWORD/" /tmp/wordpress-tests-lib/wp-tests-config.php
+          sed -i "s/localhost/$WP_TESTS_DB_HOST/" /tmp/wordpress-tests-lib/wp-tests-config.php
+
+      - name: Run PHPUnit Tests
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+        run: composer test
+
+  # ─────────────────────────────────────
+  # STAGE 3: Build Docker Image
+  # Tool: Docker + Docker Hub
+  # ─────────────────────────────────────
+  build:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t yuvaraj3007/wordpress-app:latest .
+
+      - name: Push to Docker Hub
+        run: docker push yuvaraj3007/wordpress-app:latest
+
+  # ─────────────────────────────────────
+  # STAGE 4: Deploy to Contabo VPS
+  # Tool: SSH + WP-CLI
+  # ─────────────────────────────────────
+  deploy:
+    name: Deploy to Contabo VPS
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            cd ~/wordpress-project
+            docker compose pull
+            docker compose up -d
+            docker exec wordpress wp cache flush --allow-root
+            docker exec wordpress wp theme activate yuvaraj-theme --allow-root
+            echo "WordPress deployed successfully!"
